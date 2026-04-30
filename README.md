@@ -21,7 +21,6 @@
             overflow: hidden; /* Nasconde le scrollbar */
             background-color: #1a1a1a;
         }
-
         #A {
             width: 80px;
             height: 80px;
