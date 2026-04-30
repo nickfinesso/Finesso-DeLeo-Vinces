@@ -1,1 +1,91 @@
 # Finesso-DeLeo-Vinces
+
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Square Bounce - Full Screen</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Nasconde le scrollbar */
+            background-color: #1a1a1a;
+        }
+
+        #A {
+            width: 80px;
+            height: 80px;
+            position: absolute;
+            background-color: red;
+            /* Ombra per un tocco di stile */
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+    </style>
+</head>
+<body onload="inizia()">
+
+    <div id="A"></div>
+
+    <script>
+        // Variabili globali per il movimento
+        var a;
+        var posX = Math.random() * 200;
+        var posY = Math.random() * 200;
+        var velX = 4; // Velocità orizzontale
+        var velY = 4; // Velocità verticale
+
+        function inizia() {
+            a = document.getElementById('A');
+
+            // --- La tua funzione originale per il cambio colore ---
+            var colore = new Array();
+            colore[0] = 'red';
+            colore[1] = 'yellow';
+            colore[2] = 'green';
+            colore[3] = 'blue';
+
+            setInterval(function () {
+                var x = parseInt(Math.random() * 4);
+                a.style.backgroundColor = colore[x];
+            }, 500);
+
+            // Avvio del ciclo di animazione automatica
+            muoviSenzaSosta();
+        }
+
+        function muoviSenzaSosta() {
+            // Otteniamo le dimensioni della finestra in tempo reale
+            var limiteX = window.innerWidth - a.offsetWidth;
+            var limiteY = window.innerHeight - a.offsetHeight;
+
+            // Aggiornamento posizione
+            posX += velX;
+            posY += velY;
+
+            // Rimbalzo orizzontale
+            if (posX >= limiteX || posX <= 0) {
+                velX *= -1; // Inverte la direzione
+                // Correzione per non farlo uscire dai bordi
+                posX = posX <= 0 ? 0 : limiteX;
+            }
+
+            // Rimbalzo verticale
+            if (posY >= limiteY || posY <= 0) {
+                velY *= -1; // Inverte la direzione
+                posY = posY <= 0 ? 0 : limiteY;
+            }
+
+            // Applichiamo le coordinate
+            a.style.left = posX + 'px';
+            a.style.top = posY + 'px';
+
+            // Richiede il prossimo frame dell'animazione
+            requestAnimationFrame(muoviSenzaSosta);
+        }
+    </script>
