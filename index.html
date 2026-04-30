@@ -1,91 +1,165 @@
 <!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <title>Square Bounce - Full Screen</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden; /* Nasconde le scrollbar */
-            background-color: #1a1a1a;
-        }
+<HTML>
+<HEAD>
+   <TITLE>Minigioco - Partenza da Sinistra</TITLE>
+   <style type="text/css">
+      body { margin: 0; 
+	  font-family: 'Segoe UI', sans-serif; 
+	  background-color: #e8e8e8; 
+	  overflow: hidden; }
+      
+      /* Navbar */
+      #navbar {
+         background-color: #90ee90;
+         height: 50px;
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         padding: 0 20px;
+         position: fixed;
+         top: 0; width: 100%;
+         z-index: 100;
+         transition: transform 0.3s;
+         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      #navbar.hidden { transform: translateY(-100%); }
+      
+      .titolo { font-weight: bold; color: #2e7d32; }
+      .btn-pausa { padding: 5px 15px; cursor: pointer; border-radius: 5px; border: 1px solid #2e7d32; background: white; }
+      .toggle-nav { 
+         position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%);
+         background: #90ee90; border: none; padding: 2px 10px; cursor: pointer; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;
+      }
 
-        #A {
-            width: 80px;
-            height: 80px;
-            position: absolute;
-            background-color: red;
-            /* Ombra per un tocco di stile */
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            border-radius: 4px;
-            transition: background-color 0.2s ease;
-        }
-    </style>
-</head>
-<body onload="inizia()">
+      #campo { position: relative; width: 100vw; height: 100vh; padding-top: 50px; box-sizing: border-box; }
 
-    <div id="A"></div>
+      .miediv { position: absolute; border: 1px solid #333; }
+      .ostacolo { width: 75px; height: 75px; background-color: red; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
 
-    <script>
-        // Variabili globali per il movimento
-        var a;
-        var posX = Math.random() * 200;
-        var posY = Math.random() * 200;
-        var velX = 4; // Velocità orizzontale
-        var velY = 4; // Velocità verticale
+      #B {
+         width: 35px; height: 35px;
+         background-color: orange;
+         z-index: 10;
+      }
+   </style>
+</HEAD>
 
-        function inizia() {
-            a = document.getElementById('A');
+<BODY onLoad="inizia()">
 
-            // --- La tua funzione originale per il cambio colore ---
-            var colore = new Array();
-            colore[0] = 'red';
-            colore[1] = 'yellow';
-            colore[2] = 'green';
-            colore[3] = 'blue';
+   <nav id="navbar">
+      <div class="titolo">MINIGIOCO</div>
+      <button class="btn-pausa" onclick="togglePausa()">Pausa</button>
+      <button class="toggle-nav" onclick="document.getElementById('navbar').classList.toggle('hidden')">Nascondi/Mostra</button>
+   </nav>
 
-            setInterval(function () {
-                var x = parseInt(Math.random() * 4);
-                a.style.backgroundColor = colore[x];
-            }, 500);
+   <div id="campo">
+      <DIV id='B' class='miediv'></DIV>
+   </div>
 
-            // Avvio del ciclo di animazione automatica
-            muoviSenzaSosta();
-        }
+   <SCRIPT Language='JavaScript'>
+      var fermo = false;
+      var posX, posY;
+      var velocitaAuto = 4; // Velocità di scorrimento automatico verso destra
+      var spintaFrecce = 25; 
+      var intervalGioco;
 
-        function muoviSenzaSosta() {
-            // Otteniamo le dimensioni della finestra in tempo reale
-            var limiteX = window.innerWidth - a.offsetWidth;
-            var limiteY = window.innerHeight - a.offsetHeight;
+      function inizia() {
+         var b = document.getElementById('B');
+         
+         // RESET POSIZIONE: Parte da Sinistra (0) a metà altezza
+         resetPosizione();
 
-            // Aggiornamento posizione
-            posX += velX;
-            posY += velY;
+         // Genera 15 ostacoli in ordine molto sparso
+         creaOstacoli(15);
 
-            // Rimbalzo orizzontale
-            if (posX >= limiteX || posX <= 0) {
-                velX *= -1; // Inverte la direzione
-                // Correzione per non farlo uscire dai bordi
-                posX = posX <= 0 ? 0 : limiteX;
+         // CAMBIO COLORE (Arancione, Giallo, Verde)
+         var colori = ['orange', 'yellow', 'green'];
+         setInterval(function () {
+            if (!fermo) {
+                var x = Math.floor(Math.random() * 3);
+                b.style.backgroundColor = colori[x];
             }
+         }, 500);
 
-            // Rimbalzo verticale
-            if (posY >= limiteY || posY <= 0) {
-                velY *= -1; // Inverte la direzione
-                posY = posY <= 0 ? 0 : limiteY;
+         // Controllo tastiera
+         window.addEventListener('keydown', function(e) {
+            if (fermo) return;
+            if (e.code === 'ArrowRight') posX += spintaFrecce;
+            if (e.code === 'ArrowLeft')  posX -= spintaFrecce;
+            if (e.code === 'ArrowUp')    posY -= spintaFrecce;
+            if (e.code === 'ArrowDown')  posY += spintaFrecce;
+         });
+
+         // Loop aggiornamento
+         intervalGioco = setInterval(aggiorna, 30);
+      }
+
+      function resetPosizione() {
+         posX = 10; // Parte vicino al bordo sinistro
+         posY = window.innerHeight / 2;
+      }
+
+      function creaOstacoli(n) {
+         var campo = document.getElementById('campo');
+         for (var i = 0; i < n; i++) {
+            var o = document.createElement('div');
+            o.className = 'miediv ostacolo';
+            // Sparsi in tutta l'area tranne la zona di partenza
+            o.style.left = (Math.random() * (window.innerWidth - 150) + 100) + "px";
+            o.style.top = (Math.random() * (window.innerHeight - 100)) + "px";
+            campo.appendChild(o);
+         }
+      }
+
+      function aggiorna() {
+         if (fermo) return;
+
+         var b = document.getElementById('B');
+         
+         // MOVIMENTO AUTOMATICO VERSO DESTRA
+         posX += velocitaAuto;
+
+         // Se attraversa tutto lo schermo, ricompare a sinistra
+         if (posX > window.innerWidth) posX = -35;
+         
+         // Limiti verticali
+         if (posY < 50) posY = 50;
+         if (posY > window.innerHeight - 40) posY = window.innerHeight - 40;
+
+         b.style.left = posX + "px";
+         b.style.top = posY + "px";
+
+         controllaScontro();
+      }
+
+      function controllaScontro() {
+         var b = document.getElementById('B');
+         var ostacoli = document.getElementsByClassName('ostacolo');
+         
+         for (var i = 0; i < ostacoli.length; i++) {
+            var o = ostacoli[i];
+            var ox = parseInt(o.style.left);
+            var oy = parseInt(o.style.top);
+
+            // Controllo collisione
+            if (posX < ox + 75 && posX + 35 > ox && posY < oy + 75 && posY + 35 > oy) {
+               fermo = true;
+               b.style.backgroundColor = 'red';
+               
+               setTimeout(function() {
+                  resetPosizione();
+                  fermo = false;
+               }, 1500);
+               break;
             }
+         }
+      }
 
-            // Applichiamo le coordinate
-            a.style.left = posX + 'px';
-            a.style.top = posY + 'px';
+      function togglePausa() {
+         fermo = !fermo;
+         document.querySelector('.btn-pausa').innerText = fermo ? "Riprendi" : "Pausa";
+      }
+   </SCRIPT>
 
-            // Richiede il prossimo frame dell'animazione
-            requestAnimationFrame(muoviSenzaSosta);
-        }
-    </script>
-</body>
-</html>
-
+</BODY>
+</HTML>
