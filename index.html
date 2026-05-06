@@ -1,117 +1,165 @@
-<!DOCTYPE html> 
-<HTML> 
-<HEAD> 
-<TITLE>Minigioco - Partenza da Sinistra</TITLE> 
-<style type="text/css"> 
-/* ... (CSS omesso per brevità, definisce l'aspetto visivo) ... */
-</style> 
-</HEAD> 
-<BODY onLoad="inizia()"> <!-- Avvia il gioco appena la pagina è caricata -->
- <nav id="navbar"> 
-    <div class="titolo">MINIGIOCO</div> 
-    <button class="btn-pausa" onclick="togglePausa()">Pausa</button> 
-    <button class="toggle-nav" onclick="document.getElementById('navbar').classList.toggle('hidden')">Nascondi/Mostra</button> 
- </nav> 
- <div id="campo"> 
-    <DIV id='B' class='miediv'></DIV> <!-- Il nostro giocatore (quadratino) -->
- </div> 
+<!DOCTYPE html>
+<HTML>
+<HEAD>
+   <TITLE>Minigioco</TITLE>
+   <style>
+      body { margin: 0;
+ font-family: 'Segoe UI', sans-serif;
+ background-color: #e8e8e8;
+ overflow: hidden; }
+     
+      /* Navbar */
+      #navbar {
+         background-color: #90ee90;
+         height: 50px;
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         padding: 0 20px;
+         position: fixed;
+         top: 0; width: 100%;
+         z-index: 100;
+         transition: transform 0.3s;
+         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      #navbar.hidden { transform: translateY(-100%); }
+     
+      .titolo { font-weight: bold; color: #2e7d32; }
+      .btn-pausa { padding: 5px 15px; cursor: pointer; border-radius: 5px; border: 1px solid #2e7d32; background: white; }
+      .toggle-nav {
+         position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%);
+         background: #90ee90; border: none; padding: 2px 10px; cursor: pointer; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;
+      }
 
-<SCRIPT Language='JavaScript'> 
- var fermo = false; // Stato del gioco: se true, tutto si blocca
- var posX, posY; // Coordinate attuali del giocatore
- var velocitaAuto = 4; // Pixel di cui si sposta a destra ogni 30ms
- var spintaFrecce = 25; // Pixel di spostamento quando premi un tasto
- var intervalGioco; 
+      #campo { position: relative; width: 100vw; height: 100vh; padding-top: 50px; box-sizing: border-box; }
 
- function inizia() { 
-    var b = document.getElementById('B'); 
-    resetPosizione(); // Mette il giocatore al punto di partenza
-    creaOstacoli(15); // Genera i 15 blocchi rossi casuali
-    
-    // Cambia il colore del giocatore ogni 500 millisecondi
-    setInterval(function () { 
-        if (!fermo) { 
-            var colori = ['orange', 'yellow', 'green'];
-            var x = Math.floor(Math.random() * 3); 
-            b.style.backgroundColor = colori[x]; 
-        } 
-    }, 500); 
+      .miediv { position: absolute; border: 1px solid #333; }
+      .ostacolo { width: 75px; height: 75px; background-color: red; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
 
-    // Gestione dei tasti: modifica le coordinate in base alla freccia premuta
-    window.addEventListener('keydown', function(e) { 
-        if (fermo) return; 
-        if (e.code === 'ArrowRight') posX += spintaFrecce; 
-        if (e.code === 'ArrowLeft') posX -= spintaFrecce; 
-        if (e.code === 'ArrowUp') posY -= spintaFrecce; 
-        if (e.code === 'ArrowDown') posY += spintaFrecce; 
-    }); 
+      #B {
+         width: 35px; height: 35px;
+         background-color: orange;
+         z-index: 10;
+      }
+   </style>
+</HEAD>
 
-    // Avvia il loop principale: la funzione 'aggiorna' viene chiamata ogni 30ms
-    intervalGioco = setInterval(aggiorna, 30); 
- } 
+<BODY onLoad="inizia()">
 
- function resetPosizione() { 
-    posX = 10; // Torna vicino al bordo sinistro
-    posY = window.innerHeight / 2; // Torna a metà altezza
- } 
+   <nav id="navbar">
+      <div class="titolo">MINIGIOCO</div>
+      <button class="btn-pausa" onclick="togglePausa()">Pausa</button>
+      <button class="toggle-nav" onclick="document.getElementById('navbar').classList.toggle('hidden')">Nascondi/Mostra</button>
+   </nav>
 
- function creaOstacoli(n) { 
-    var campo = document.getElementById('campo'); 
-    for (var i = 0; i < n; i++) { 
-        var o = document.createElement('div'); 
-        o.className = 'miediv ostacolo'; 
-        // Posizionamento casuale evitando i primi 100px a sinistra (zona partenza)
-        o.style.left = (Math.random() * (window.innerWidth - 150) + 100) + "px"; 
-        o.style.top = (Math.random() * (window.innerHeight - 100)) + "px"; 
-        campo.appendChild(o); 
-    } 
- } 
+   <div id="campo">
+      <DIV id='B' class='miediv'></DIV>
+   </div>
 
- function aggiorna() { 
-    if (fermo) return; // Se in pausa o dopo scontro, non muovere nulla
-    var b = document.getElementById('B'); 
-    
-    posX += velocitaAuto; // Incrementa costantemente la X (movimento a destra)
+   <SCRIPT>
+      var fermo = false;
+      var posX, posY;
+      var velocitaAuto = 4; // Velocità di scorrimento automatico verso destra
+      var spintaFrecce = 25;
+      var intervalGioco;
 
-    // Logica "Teletrasporto": se esci a destra, riparti da sinistra
-    if (posX > window.innerWidth) posX = -35; 
-    
-    // Limiti per non far uscire il giocatore sopra o sotto la navbar/schermo
-    if (posY < 50) posY = 50; 
-    if (posY > window.innerHeight - 40) posY = window.innerHeight - 40; 
+      function inizia() {
+         var b = document.getElementById('B');
+         
+         // RESET POSIZIONE: Parte da Sinistra (0) a metà altezza
+         resetPosizione();
 
-    // Applica fisicamente le nuove coordinate X e Y all'elemento HTML
-    b.style.left = posX + "px"; 
-    b.style.top = posY + "px"; 
-    
-    controllaScontro(); // Ad ogni movimento controlla se hai toccato un ostacolo
- } 
+         // Genera 15 ostacoli in ordine molto sparso
+         creaOstacoli(15);
 
- function controllaScontro() { 
-    var b = document.getElementById('B'); 
-    var ostacoli = document.getElementsByClassName('ostacolo'); 
-    for (var i = 0; i < ostacoli.length; i++) { 
-        var o = ostacoli[i]; 
-        var ox = parseInt(o.style.left); 
-        var oy = parseInt(o.style.top); 
+         // CAMBIO COLORE (Arancione, Giallo, Verde)
+         var colori = ['orange', 'yellow', 'green'];
+         setInterval(function () {
+            if (!fermo) {
+                var x = Math.floor(Math.random() * 3);
+                b.style.backgroundColor = colori[x];
+            }
+         }, 500);
 
-        // Formula matematica per capire se i due quadrati si sovrappongono
-        if (posX < ox + 75 && posX + 35 > ox && posY < oy + 75 && posY + 35 > oy) { 
-            fermo = true; // Ferma il gioco
-            b.style.backgroundColor = 'red'; // Feedback visivo della sconfitta
-            setTimeout(function() { 
-                resetPosizione(); // Dopo 1.5 secondi resetta tutto
-                fermo = false; 
-            }, 1500); 
-            break; 
-        } 
-    } 
- } 
+         // Controllo tastiera
+         window.addEventListener('keydown', function(e) {
+            if (fermo) return;
+            if (e.code === 'ArrowRight') posX += spintaFrecce;
+            if (e.code === 'ArrowLeft')  posX -= spintaFrecce;
+            if (e.code === 'ArrowUp')    posY -= spintaFrecce;
+            if (e.code === 'ArrowDown')  posY += spintaFrecce;
+         });
 
- function togglePausa() { 
-    fermo = !fermo; // Inverte lo stato (se era true diventa false e viceversa)
-    document.querySelector('.btn-pausa').innerText = fermo ? "Riprendi" : "Pausa"; 
- } 
-</SCRIPT> 
-</BODY> 
+         // Loop aggiornamento
+         intervalGioco = setInterval(aggiorna, 30);
+      }
+
+      function resetPosizione() {
+         posX = 10; // Parte vicino al bordo sinistro
+         posY = window.innerHeight / 2;
+      }
+
+      function creaOstacoli(n) {
+         var campo = document.getElementById('campo');
+         for (var i = 0; i < n; i++) {
+            var o = document.createElement('div');
+            o.className = 'miediv ostacolo';
+            // Sparsi in tutta l'area tranne la zona di partenza
+            o.style.left = (Math.random() * (window.innerWidth - 150) + 100) + "px";
+            o.style.top = (Math.random() * (window.innerHeight - 100)) + "px";
+            campo.appendChild(o);
+         }
+      }
+
+      function aggiorna() {
+         if (fermo) return;
+
+         var b = document.getElementById('B');
+         
+         // MOVIMENTO AUTOMATICO VERSO DESTRA
+         posX += velocitaAuto;
+
+         // Se attraversa tutto lo schermo, ricompare a sinistra
+         if (posX > window.innerWidth) posX = -35;
+         
+         // Limiti verticali
+         if (posY < 50) posY = 50;
+         if (posY > window.innerHeight - 40) posY = window.innerHeight - 40;
+
+         b.style.left = posX + "px";
+         b.style.top = posY + "px";
+
+         controllaScontro();
+      }
+
+      function controllaScontro() {
+         var b = document.getElementById('B');
+         var ostacoli = document.getElementsByClassName('ostacolo');
+         
+         for (var i = 0; i < ostacoli.length; i++) {
+            var o = ostacoli[i];
+            var ox = parseInt(o.style.left);
+            var oy = parseInt(o.style.top);
+
+            // Controllo collisione
+            if (posX < ox + 75 && posX + 35 > ox && posY < oy + 75 && posY + 35 > oy) {
+               fermo = true;
+               b.style.backgroundColor = 'red';
+               
+               setTimeout(function() {
+                  resetPosizione();
+                  fermo = false;
+               }, 1500);
+               break;
+            }
+         }
+      }
+
+      function togglePausa() {
+         fermo = !fermo;
+         document.querySelector('.btn-pausa').innerText = fermo ? "Riprendi" : "Pausa";
+      }
+   </SCRIPT>
+
+</BODY>
 </HTML>
